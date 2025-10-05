@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KOOL 97 FM • Spin & Win (Client-Only)</title>
+<meta name="theme-color" content="#0077C8">
+<style>
+  :root{ --kool-blue:#0077C8; --kool-blue-dark:#005e9e; --kool-orange:#FF5A00; --wheel-size:min(92vw,460px); }
+  *{box-sizing:border-box}
+  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:#0b1f2a;
+        background: radial-gradient(1100px 560px at 50% -200px, rgba(0,119,200,.12), transparent 60%) #fff;
+        min-height:100svh; display:flex; align-items:center; justify-content:center; padding:16px; }
+  .card{ width:min(98vw, 940px); background:#fff; border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,.08);
+         padding: clamp(16px, 3vw, 28px); }
+  header{ display:flex; gap:14px; align-items:center; border-bottom:1px solid #eef3f7; padding-bottom:12px; margin-bottom:16px; }
+  header .logo{ width:70px; height:70px; border-radius:14px; background:#eef6ff; display:grid; place-items:center; font-weight:800; color:#005e9e }
+  header h1{ font-size: clamp(18px, 4.2vw, 28px); margin:0 0 4px; color:#003c66 }
+  header p{ margin:0; color:#4a5b68; font-size:clamp(12px,2.8vw,14px) }
+  .wrap{ display:grid; grid-template-columns:1fr; gap:22px; align-items:start; }
+  @media (min-width: 850px){ .wrap{ grid-template-columns:1fr 1fr; gap:28px; } }
+  #wheel{ position:relative; width:var(--wheel-size); height:var(--wheel-size); border-radius:50%;
+          border: clamp(6px,1.6vw,12px) solid #005e9e; box-shadow:0 8px 20px rgba(0,0,0,.12); overflow:hidden; background:#fff; margin:auto; }
+  canvas{ display:block; width:100%; height:100%; }
+  .pointer{ width:0; height:0; border-left: calc(var(--wheel-size)*.05) solid transparent; border-right: calc(var(--wheel-size)*.05) solid transparent;
+            border-bottom: calc(var(--wheel-size)*.085) solid var(--kool-orange); position:absolute; top: calc(-1 * var(--wheel-size)*.085);
+            left:50%; transform:translateX(-50%); filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+  .controls{ text-align:center }
+  .btn{ margin-top:10px; padding:14px 34px; font-weight:800; font-size:clamp(16px,3.8vw,18px); border:none; border-radius:12px;
+        background: linear-gradient(180deg, var(--kool-orange), #ff7c33); color:#fff; cursor:pointer; box-shadow:0 6px 16px rgba(255,90,0,.35); }
+  .btn:disabled{ opacity:.55; cursor:not-allowed }
+  #result{ margin-top:12px; font-size:clamp(16px,4vw,20px); font-weight:800; min-height:1.8em }
+  .tryagain-anim{ display:inline-block; animation: tryagain-bounce 900ms ease, tryagain-glow 900ms ease; }
+  @keyframes tryagain-bounce{ 0%{transform:translateY(0) scale(1)} 20%{transform:translateY(-6px) scale(1.02)} 40%{transform:translateY(0) scale(1)} 60%{transform:translateY(-3px) scale(1.01)} 100%{transform:translateY(0) scale(1)} }
+  @keyframes tryagain-glow{ 0%{text-shadow:0 0 0 rgba(234,88,12,0); color:#0b1f2a} 25%{text-shadow:0 6px 14px rgba(234,88,12,.35); color:#b45309} 50%{text-shadow:0 4px 10px rgba(234,88,12,.25); color:#92400e} 100%{text-shadow:0 0 0 rgba(234,88,12,0); color:#0b1f2a} }
+  .small{ color:#5a6a77; font-size:12px; margin-top:8px }
+  .claim{ display:none; background:#f7fbff; border:1px solid #e5f0fa; border-radius:12px; padding:14px; margin-top:10px; }
+  .claim input{ width:100%; padding:12px; margin:6px 0; border:1px solid #cbd8e6; border-radius:8px; font-size:16px; }
+  .claim button{ padding:12px 18px; background:#0077C8; color:#fff; border:none; border-radius:10px; cursor:pointer; font-size:16px; margin-top:6px; }
+  #confettiCanvas{ position:fixed; inset:0; pointer-events:none }
+</style>
+</head>
+<body>
+<canvas id="confettiCanvas"></canvas>
+
+<div class="card">
+  <header>
+    <div class="logo">KOOL</div>
+    <div>
+      <h1>Spin & Win • KOOL 97 FM</h1>
+      <p>The Only Station To Keep You Kool</p>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section style="text-align:center">
+      <div id="wheel">
+        <div class="pointer"></div>
+        <canvas id="canvas"></canvas>
+      </div>
+      <div class="controls">
+        <button id="spinBtn" class="btn">SPIN</button>
+        <div id="result"></div>
+        <div class="small">Tip: add this page to your app or link from a landing page.</div>
+      </div>
+    </section>
+
+    <section>
+      <h3>Today’s Prizes</h3>
+      <ul>
+        <li>01 — Bottle Openers</li>
+        <li>02 — Coffee Cups</li>
+        <li>03 — Bags</li>
+        <li>04 — Cell Phone Sleeves</li>
+        <li>05 — Water Bottles</li>
+        <li>06 — T-Shirts</li>
+        <li>00 — Try Again</li>
+      </ul>
+
+      <div id="claim" class="claim">
+        <h4>Claim your prize</h4>
+        <input id="name" placeholder="Your Name" />
+        <input id="email" placeholder="Your Email" type="email" />
+        <button id="claimBtn">Send Claim Email</button>
+        <div id="thanks" class="small" style="display:none; color:#0a7a2f; font-weight:700; margin-top:8px">Thanks! Check your email’s Sent folder.</div>
+      </div>
+
+      <div class="small" style="margin-top:14px">
+        Admin note: this is a client-only version. To enforce “one spin per day,” toggle <code>ENFORCE_DAILY_LIMIT</code> in the code.
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+/*** CONFIG ***/
+const ENFORCE_DAILY_LIMIT = false; // set to true if you want “one spin per day” (uses localStorage)
+const WEIGHTS = [0.10, 0.10, 0.10, 0.10, 0.10, 0.10, 0.40]; // 6 prizes + Try Again (40%)
+const options = [
+  { label: "Bottle Openers",      color: "#FF5A00", code: "01", win: true },
+  { label: "Coffee Cups",         color: "#00B0FF", code: "02", win: true },
+  { label: "Bags",                color: "#1A73E8", code: "03", win: true },
+  { label: "Cell Phone Sleeves",  color: "#0E4D92", code: "04", win: true },
+  { label: "Water Bottles",       color: "#009688", code: "05", win: true },
+  { label: "T-Shirts",            color: "#8E44AD", code: "06", win: true },
+  { label: "Try Again",           color: "#9aa5b1", code: "00", win: false }
+];
+const slice = 360 / options.length;
+
+/*** UTIL ***/
+function getDeviceId(){
+  const k = "kool_device_id";
+  let id = localStorage.getItem(k);
+  if(!id){ id = (crypto.randomUUID?.() || String(Math.random()).slice(2)); localStorage.setItem(k, id); }
+  return id;
+}
+function spunToday(){
+  const k = "kool_last_spin";
+  const today = new Date().toISOString().slice(0,10);
+  const v = localStorage.getItem(k);
+  return v === today;
+}
+function markSpunToday(){
+  localStorage.setItem("kool_last_spin", new Date().toISOString().slice(0,10));
+}
+
+/*** CANVAS WHEEL ***/
+const canvas = document.getElementById("canvas"); const ctx = canvas.getContext("2d", { alpha: true });
+function sizeCanvasToWheel(){
+  const wheel = document.getElementById("wheel");
+  const cssSize = wheel.clientWidth; const dpr = Math.max(1, window.devicePixelRatio || 1);
+  canvas.width = Math.floor(cssSize*dpr); canvas.height = Math.floor(cssSize*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); drawWheel();
+}
+function drawWheel(){
+  const size = canvas.clientWidth; const cx=size/2, cy=size/2, r=size/2; const arc=(Math.PI*2)/options.length;
+  ctx.clearRect(0,0,size,size);
+  for(let i=0;i<options.length;i++){
+    const a=i*arc; ctx.beginPath(); ctx.fillStyle=options[i].color; ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+arc); ctx.closePath(); ctx.fill();
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(a+arc/2);
+    const fontSize = Math.max(11, Math.min(16, r*0.085)); ctx.fillStyle="#001b2e"; ctx.font = `${fontSize}px Arial`; ctx.textBaseline="middle";
+    ctx.fillText(options[i].label, r*0.35, 0); ctx.restore();
+  }
+}
+sizeCanvasToWheel(); addEventListener('resize', ()=>{ clearTimeout(window.__rz); window.__rz=setTimeout(sizeCanvasToWheel,120); });
+
+/*** SIMPLE SOUNDS ***/
+let audioCtx, muted=false;
+function initAudio(){ if(audioCtx) return; audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+function playTick(){ initAudio(); const o=audioCtx.createOscillator(), g=audioCtx.createGain(); const t=audioCtx.currentTime; o.type="square";
+  o.frequency.setValueAtTime(2200,t); g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.12,t+.01); g.gain.exponentialRampToValueAtTime(.0001,t+.06);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t+.08); }
+function playChime(){ initAudio(); const o=audioCtx.createOscillator(), g=audioCtx.createGain(); const t=audioCtx.currentTime; o.type="sine";
+  o.frequency.setValueAtTime(784,t); o.frequency.exponentialRampToValueAtTime(1174,t+.18); g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.18,t+.05);
+  g.gain.exponentialRampToValueAtTime(.0001,t+.6); o.connect(g).connect(audioCtx.destination); o.start(); o.stop(t+.65); }
+function playWhoosh(){ initAudio(); const bufferSize=2*audioCtx.sampleRate; const buf=audioCtx.createBuffer(1,bufferSize,audioCtx.sampleRate);
+  const out=buf.getChannelData(0); for(let i=0;i<bufferSize;i++){ out[i]=(Math.random()*2-1)*(1-i/bufferSize); }
+  const src=audioCtx.createBufferSource(); src.buffer=buf; const filter=audioCtx.createBiquadFilter(); filter.type="highpass"; filter.frequency.value=500;
+  const g=audioCtx.createGain(); const t=audioCtx.currentTime; g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.18,t+.05); g.gain.exponentialRampToValueAtTime(.0001,t+.5);
+  src.connect(filter).connect(g).connect(audioCtx.destination); src.start(t); src.stop(t+.5); }
+
+/*** CONFETTI ***/
+const confettiCanvas = document.getElementById('confettiCanvas'); const cctx = confettiCanvas.getContext('2d');
+function sizeConfetti(){ confettiCanvas.width=innerWidth; confettiCanvas.height=innerHeight; } sizeConfetti(); addEventListener('resize', sizeConfetti);
+function confetti(duration=1200,count=120){
+  const parts=[]; for(let i=0;i<count;i++){ parts.push({ x:Math.random()*innerWidth, y:-10-Math.random()*50, w:6+Math.random()*6, h:8+Math.random()*10,
+    vx:-2+Math.random()*4, vy:2+Math.random()*3, rot:Math.random()*Math.PI*2, vr:-0.2+Math.random()*0.4,
+    color:['#FF5A00','#00B0FF','#1A73E8','#0E4D92','#009688','#8E44AD'][Math.floor(Math.random()*6)]}); }
+  const start=performance.now();
+  function step(now){
+    cctx.clearRect(0,0,innerWidth,innerHeight);
+    for(const p of parts){ p.x+=p.vx; p.y+=p.vy; p.vy+=0.03; p.rot+=p.vr;
+      cctx.save(); cctx.translate(p.x,p.y); cctx.rotate(p.rot); cctx.fillStyle=p.color; cctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); cctx.restore(); }
+    if(now-start<duration){ requestAnimationFrame(step); } else { cctx.clearRect(0,0,innerWidth,innerHeight); }
+  }
+  requestAnimationFrame(step);
+}
+
+/*** SPIN (client-only weighted) ***/
+const resBox = document.getElementById('result');
+const claimBox = document.getElementById('claim');
+const spinBtn = document.getElementById('spinBtn');
+
+function weightedIndex(){
+  const r = Math.random(); let acc=0;
+  for (let i=0;i<WEIGHTS.length;i++){ acc+=WEIGHTS[i]; if(r<=acc) return i; }
+  return WEIGHTS.length-1;
+}
+
+let spinning=false, lastTickIndex=-1;
+spinBtn.addEventListener('click', ()=>{
+  if(spinning) return;
+  if(ENFORCE_DAILY_LIMIT && spunToday()){
+    resBox.textContent = "You’ve already played today. Come back tomorrow!";
+    resBox.classList.remove('tryagain-anim');
+    return;
+  }
+
+  const deviceId = getDeviceId(); // not sent anywhere; used only for local tracking
+  claimBox.style.display='none';
+  resBox.textContent = "";
+  spinBtn.disabled = true;
+
+  const targetIndex = weightedIndex();
+  const totalRotations = 6;
+  const finalSliceDeg = 360/options.length;
+  const finalDeg = totalRotations*360 + (options.length - targetIndex)*finalSliceDeg + (finalSliceDeg*0.5);
+  const duration = 4700;
+
+  const start = performance.now(); spinning=true; lastTickIndex=-1;
+
+  function animate(now){
+    const t = Math.min(1, (now-start)/duration);
+    const easeOut = 1 - Math.pow(1-t, 3);
+    const deg = finalDeg * easeOut;
+    drawRotated(deg);
+
+    const currentIndex = Math.floor((deg % 360) / finalSliceDeg);
+    if(currentIndex !== lastTickIndex){ lastTickIndex = currentIndex; playTick(); }
+
+    if(t<1){ requestAnimationFrame(animate); }
+    else {
+      const prize = options[targetIndex];
+      if (ENFORCE_DAILY_LIMIT) markSpunToday();
+
+      if(prize.win){
+        resBox.classList.remove('tryagain-anim');
+        resBox.textContent = `🎁 You won: ${prize.label} (Code ${prize.code})`;
+        claimBox.style.display='block';
+        confetti(); playChime();
+        setupClaim(prize);
+      } else {
+        resBox.textContent = "🔁 Try Again!";
+        resBox.classList.remove('tryagain-anim'); void resBox.offsetWidth; resBox.classList.add('tryagain-anim');
+        playWhoosh();
+      }
+      spinning=false; spinBtn.disabled = false;
+    }
+  }
+  requestAnimationFrame(animate);
+});
+
+function drawRotated(deg){
+  const size = canvas.clientWidth; const cx=size/2, cy=size/2;
+  ctx.clearRect(0,0,size,size); ctx.save(); ctx.translate(cx,cy); ctx.rotate(deg*Math.PI/180); ctx.translate(-cx,-cy); drawWheel(); ctx.restore();
+}
+
+/*** SIMPLE CLAIM (mailto) ***/
+function setupClaim(prize){
+  const btn = document.getElementById('claimBtn');
+  btn.onclick = () => {
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const subject = encodeURIComponent(`KOOL97 Prize Claim: ${prize.label} (${prize.code})`);
+    const body = encodeURIComponent(
+      `Name: ${name}\nEmail: ${email}\nPrize: ${prize.label}\nCode: ${prize.code}\nTime: ${new Date().toLocaleString()}\nDevice: ${getDeviceId()}`
+    );
+    // Change this to your real inbox address:
+    const to = "prizes@example.com";
+    const href = `mailto:${to}?subject=${subject}&body=${body}`;
+    location.href = href;
+    document.getElementById('thanks').style.display='block';
+  };
+}
+</script>
+</body>
+</html>
